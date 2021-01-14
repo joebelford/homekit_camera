@@ -23,7 +23,7 @@ extern "C" {
 /**
  * Total number of services and characteristics contained in the accessory.
  */
-#define kAttributeCount ((size_t) 28)
+#define kAttributeCount ((size_t) 40)
 
 /**
  * HomeKit Accessory Information service.
@@ -61,6 +61,7 @@ extern const HAPTLV8Characteristic supportedVideoStreamCharacteristic;
 extern const HAPTLV8Characteristic supportedRTPConfigurationCharacteristic;
 extern const HAPTLV8Characteristic selectedRTPConfigurationCharacteristic;
 extern const HAPTLV8Characteristic setupEndpointsCharacteristic;
+extern const HAPUInt8Characteristic rtpActiveCharacteristic;
 extern const HAPService rtpStreamService;
 
 /**
@@ -74,6 +75,33 @@ extern const HAPService microphoneService;
  */
 extern const HAPBoolCharacteristic motionDetectedCharacteristic;
 extern const HAPService motionDetectService;
+
+/**
+ * Camera Operating Mode Service
+ */
+// required
+extern const HAPBoolCharacteristic eventSnapshotsActiveCharacteristic;
+extern const HAPBoolCharacteristic homekitCameraActiveCharacteristic;
+extern const HAPService cameraOperatingModeService;
+
+/**
+ * Camera Recording Management Service
+ */
+// required
+extern const HAPTLV8Characteristic supportedCameraRecordingConfigurationCharacteristic;
+extern const HAPTLV8Characteristic supportedVideoRecordingConfigurationCharacteristic;
+extern const HAPTLV8Characteristic supportedAudioRecordingConfigurationCharacteristic;
+extern const HAPTLV8Characteristic selectedCameraRecordingConfigurationCharacteristic;
+extern const HAPUInt8Characteristic cameraRecMgmtActiveCharacteristic;
+extern const HAPService cameraRecordingManagementService;
+
+/**
+ * Data Stream Transport Management Service
+ */
+// required
+extern const HAPTLV8Characteristic setupDataStreamTransportCharacteristic;
+extern const HAPTLV8Characteristic supportedDataStreamTransportConfigurationCharacteristic;
+extern const HAPService dataStreamTransportManagementService;
 
 #if __has_feature(nullability)
 #pragma clang assume_nonnull end

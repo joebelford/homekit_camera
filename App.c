@@ -84,6 +84,8 @@ static void LoadAccessoryState(void) {
                 kHAPCharacteristicValue_SupportedRTPConfiguration_AES_CM_128_HMAC_SHA1_80; // Only support 1 as a test
         accessoryConfiguration.state.microphone.muted = true;
         accessoryConfiguration.state.motion.detected = false;
+        accessoryConfiguration.state.operatingMode.homekitActive = true;
+        accessoryConfiguration.state.operatingMode.recordingActive = kHAPCharacteristicValue_Active_Active;
         strcpy(accessoryConfiguration.ipAddress, "10.0.1.5"); // TODO - hardcode this for now
     }
 }
@@ -127,6 +129,9 @@ static HAPAccessory accessory = { .aid = 1,
                                                                             &rtpStreamService,
                                                                             &microphoneService,
                                                                             &motionDetectService,
+                                                                            //&cameraOperatingModeService,
+                                                                            //&cameraRecordingManagementService,
+                                                                            //&dataStreamTransportManagementService,
                                                                             NULL },
                                   .callbacks = { .identify = IdentifyAccessory } };
 
