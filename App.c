@@ -79,7 +79,6 @@ static void LoadAccessoryState(void) {
             HAPLogError(&kHAPLog_Default, "Unexpected app state found in key-value store. Resetting to default.");
         }
         HAPRawBufferZero(&accessoryConfiguration.state, sizeof accessoryConfiguration.state);
-        accessoryConfiguration.state.active = kHAPCharacteristicValue_Active_Active;
         accessoryConfiguration.state.streaming = kHAPCharacteristicValue_StreamingStatus_Available;
         accessoryConfiguration.state.supportedRTP[0] =
                 kHAPCharacteristicValue_SupportedRTPConfiguration_AES_CM_128_HMAC_SHA1_80; // Only support 1 as a test

@@ -36,11 +36,6 @@ typedef struct {
         } motion;
         HAPCharacteristicValue_StreamingStatus streaming;
         HAPCharacteristicValue_SupportedRTPConfiguration supportedRTP[1];
-        HAPCharacteristicValue_Active active;
-        struct {
-            HAPCharacteristicValue_Active recordingActive;
-            bool homekitActive;
-        } operatingMode;
     } state;
     char ipAddress [9]; //TODO - hardcode for now
     HAPAccessoryServerRef* server;
