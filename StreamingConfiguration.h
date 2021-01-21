@@ -27,6 +27,7 @@ typedef struct {
     uint8_t audioChannels;
     uint8_t bitRate;
     uint8_t sampleRate;
+    uint8_t rtpTime;
 } audioCodecParamsStruct;
 
 typedef struct {
