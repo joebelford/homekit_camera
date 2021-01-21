@@ -31,6 +31,7 @@
 #include <string.h>
 #include "App.h"
 #include "DB.h"
+#include <stdlib.h>
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -204,6 +205,16 @@ void AppInitialize(
         HAPPlatform* hapPlatform HAP_UNUSED,
         HAPAccessoryServerCallbacks* hapAccessoryServerCallbacks HAP_UNUSED) {
     /*no-op*/
+}
+
+void ContextInitialize(AccessoryContext* context){
+    memset(context, 0, sizeof(AccessoryContext));
+    // context->session->status = kHAPCharacteristicValue_StreamingStatus_Available;
+//    context->session->ip_address = Set this up later.
+}
+
+void ContextDeintialize(AccessoryContext* context){
+    free(context);
 }
 
 void AppDeinitialize() {

@@ -53,6 +53,8 @@ static struct {
  */
 static HAPAccessoryServerRef accessoryServer;
 
+static AccessoryContext context;
+
 void HandleUpdatedState(HAPAccessoryServerRef* _Nonnull server, void* _Nullable context);
 
 /**
@@ -64,6 +66,8 @@ extern void AppInitialize(
         HAPAccessoryServerOptions* hapAccessoryServerOptions,
         HAPPlatform* hapPlatform,
         HAPAccessoryServerCallbacks* hapAccessoryServerCallbacks);
+extern void ContextInitialize(AccessoryContext* context);
+extern void ContextDeintialize(AccessoryContext* context);
 extern void AppDeinitialize();
 extern void AppAccessoryServerStart(void);
 extern void AccessoryServerHandleUpdatedState(HAPAccessoryServerRef* server, void* _Nullable context);
@@ -294,6 +298,7 @@ int main(int argc HAP_UNUSED, char* _Nullable argv[_Nullable] HAP_UNUSED) {
     // Perform Application-specific initalizations such as setting up callbacks
     // and configure any additional unique platform dependencies
     AppInitialize(&platform.hapAccessoryServerOptions, &platform.hapPlatform, &platform.hapAccessoryServerCallbacks);
+    ContextInitialize(&context);
 
     // Initialize accessory server.
     HAPAccessoryServerCreate(
@@ -301,7 +306,8 @@ int main(int argc HAP_UNUSED, char* _Nullable argv[_Nullable] HAP_UNUSED) {
             &platform.hapAccessoryServerOptions,
             &platform.hapPlatform,
             &platform.hapAccessoryServerCallbacks,
-            /* context: */ NULL);
+            &context);
+            // /* context: */ NULL);
 
     // Create app object.
     AppCreate(&accessoryServer, &platform.keyValueStore);
@@ -315,6 +321,8 @@ int main(int argc HAP_UNUSED, char* _Nullable argv[_Nullable] HAP_UNUSED) {
 
     // Cleanup.
     AppRelease();
+    
+    ContextDeintialize(&context);
 
     HAPAccessoryServerRelease(&accessoryServer);
 

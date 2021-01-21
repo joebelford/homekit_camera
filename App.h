@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 #include "HAP.h"
+#include "StreamingSession.h"
 
 #if __has_feature(nullability)
 #pragma clang assume_nonnull begin
@@ -42,6 +43,11 @@ typedef struct {
 } AccessoryConfiguration;
 
 static AccessoryConfiguration accessoryConfiguration;
+
+
+typedef struct {
+    streamingSession session;
+} AccessoryContext;
 
 /**
  * Identify routine. Used to locate the accessory.
