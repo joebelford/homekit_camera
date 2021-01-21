@@ -638,25 +638,30 @@ HAPError HandleSetupEndpointsRead(
         HAPAccessoryServerRef* server HAP_UNUSED,
         const HAPTLV8CharacteristicReadRequest* request HAP_UNUSED,
         HAPTLVWriterRef* responseWriter HAP_UNUSED,
-        void* _Nullable context HAP_UNUSED) {
+        void* _Nullable context) {
 
     HAPLogInfo(&kHAPLog_Default, "%s", __func__);
-    /*
-        HAPError err;
+    HAPError err;
+    AccessoryContext *myContext = context;
+    streamingSession* newSession = &(myContext->session);
 
-        void* bytes;
-        size_t maxBytes;
-        HAPTLVWriterGetScratchBytes(responseWriter, &bytes, &maxBytes);
+    controllerAddressStruct accesoryAddress = newSession->controller_address;
 
-        err = HAPTLVWriterAppend(
-                responseWriter,
-                &(const HAPTLV) { .type = 2, // Status
-                                  .value = { .bytes = &accessoryConfiguration.state.streaming, .numBytes = 1 } });
+    const char ipAddress[] = "10.0.1.5";
+    in_addr_t ia;
+    int s;
+    s = inet_pton(AF_INET, ipAddress, &ia);
+    if (s <= 0) {
+        HAPLogError(&kHAPLog_Default, "%s\n", "Invalid address");
+        return kHAPError_InvalidData;
+    };
 
-        err = HAPTLVWriterAppend(
-                responseWriter,
-                &(const HAPTLV) { .type = 3, // Address
-                                  .value = { .bytes = &accessoryConfiguration.ipAddress, .numBytes = 9 } });
+    accesoryAddress.ipAddress = ia;
+    newSession->accessory_address = accesoryAddress;
+    newSession->status = kHAPCharacteristicValue_StreamingStatus_Available;
+    newSession->ssrcVideo = 1;
+    newSession->ssrcAudio = 1;
+    err = handleRead(responseWriter, &(myContext->session));
 
     return err;
     /*
@@ -686,22 +691,14 @@ HAPError HandleSetupEndpointsWrite(
         HAPAccessoryServerRef* server HAP_UNUSED,
         const HAPTLV8CharacteristicWriteRequest* request HAP_UNUSED,
         HAPTLVReaderRef* requestReader,
-        void* _Nullable context HAP_UNUSED) {
+        void* _Nullable context) {
     // HAPPrecondition(requestReader);
 
     HAPLogInfo(&kHAPLog_Default, "%s", __func__);
 
     HAPError err;
-    HAPTLV sessionId;
-    bool found;
-
-    // Simply validate input.
-    err = HAPTLVReaderGetNext(requestReader, &found, &sessionId);
-    // err = HAPTLVReaderGetAll(requestReader, (HAPTLV* const[]) { &sessionId });
-    if (err) {
-        HAPAssert(err == kHAPError_InvalidData);
-        return err;
-    }
+    AccessoryContext* myContext = context;
+    streamingSession* newSession = &(myContext->session);
 
     if (found) {
         HAPLogInfo(&kHAPLog_Default, "Found a TLV");
@@ -719,6 +716,8 @@ HAPError HandleSetupEndpointsWrite(
     }
 
     return kHAPError_None;
+    err = handleWrite(requestReader, newSession);
+    return err;
 }
 
 HAP_RESULT_USE_CHECK
