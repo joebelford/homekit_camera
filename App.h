@@ -35,7 +35,6 @@ typedef struct {
             bool detected;
         } motion;
         HAPCharacteristicValue_StreamingStatus streaming;
-        HAPCharacteristicValue_SupportedRTPConfiguration supportedRTP[1];
     } state;
     char ipAddress [9]; //TODO - hardcode for now
     HAPAccessoryServerRef* server;

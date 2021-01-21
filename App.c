@@ -80,8 +80,6 @@ static void LoadAccessoryState(void) {
         }
         HAPRawBufferZero(&accessoryConfiguration.state, sizeof accessoryConfiguration.state);
         accessoryConfiguration.state.streaming = kHAPCharacteristicValue_StreamingStatus_Available;
-        accessoryConfiguration.state.supportedRTP[0] =
-                kHAPCharacteristicValue_SupportedRTPConfiguration_AES_CM_128_HMAC_SHA1_80; // Only support 1 as a test
         accessoryConfiguration.state.microphone.muted = true;
         accessoryConfiguration.state.motion.detected = false;
         accessoryConfiguration.state.operatingMode.homekitActive = true;
