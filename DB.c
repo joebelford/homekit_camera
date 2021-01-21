@@ -447,7 +447,7 @@ const HAPTLV8Characteristic setupEndpointsCharacteristic = {
                     .hidden = false,
                     .requiresTimedWrite = false,
                     .supportsAuthorizationData = false,
-                    .ip = { .controlPoint = false, .supportsWriteResponse = false } },
+                    .ip = { .controlPoint = true, .supportsWriteResponse = false } }, // controlpoint == true to prevent read on pair.
     .callbacks = { .handleRead = HandleSetupEndpointsRead, .handleWrite = HandleSetupEndpointsWrite }
 };
 
