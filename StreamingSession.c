@@ -188,7 +188,7 @@ const AddressTypeFormat addressTypeFormat = { .type = kHAPTLVFormatType_Struct,
                                               .callbacks = { .isValid = isValid } };
 
 const HAPStructTLVMember controllerAddressTypeMember = { .valueOffset =
-                                                                 HAP_OFFSETOF(streamingSession, controller_address),
+                                                                 HAP_OFFSETOF(streamingSession, controllerAddress),
                                                          .isSetOffset = 0,
                                                          .tlvType = 3,
                                                          .debugDescription = "Controller Address Type",
@@ -197,7 +197,7 @@ const HAPStructTLVMember controllerAddressTypeMember = { .valueOffset =
                                                          .isFlat = false };
 
 const HAPStructTLVMember accessoryAddressTypeMember = { .valueOffset =
-                                                                HAP_OFFSETOF(streamingSession, accessory_address),
+                                                                HAP_OFFSETOF(streamingSession, accessoryAddress),
                                                         .isSetOffset = 0,
                                                         .tlvType = 3,
                                                         .debugDescription = "Controller Address Type",
