@@ -174,9 +174,9 @@ void AppAccessoryServerStart(void) {
 }
 
 //----------------------------------------------------------------------------------------------------------------------
-void AccessoryServerHandleUpdatedState(HAPAccessoryServerRef* server, void* _Nullable context) {
+void AccessoryServerHandleUpdatedState(HAPAccessoryServerRef* server, void* _Nullable context HAP_UNUSED) {
     HAPPrecondition(server);
-    HAPPrecondition(!context);
+    // HAPPrecondition(!context);
 
     switch (HAPAccessoryServerGetState(server)) {
         case kHAPAccessoryServerState_Idle: {
