@@ -72,6 +72,17 @@ const HAPStructTLVMember audioCodecParamsSampleRateMember = { .valueOffset =
                                                               .isOptional = false,
                                                               .isFlat = false };
 
+const HAPUInt8TLVFormat audioCodecParamsRTPTimeFormat = { .type = kHAPTLVFormatType_UInt8,
+                                                          .constraints = { .minimumValue = 0, .maximumValue = 0xFF },
+                                                          .callbacks = { .getDescription = NULL } };
+const HAPStructTLVMember audioCodecParamsRTPTimeMember = { .valueOffset = HAP_OFFSETOF(audioCodecParamsStruct, rtpTime),
+                                                           .isSetOffset = 0,
+                                                           .tlvType = 4,
+                                                           .debugDescription = "Audio Codec Param RTP Time",
+                                                           .format = &audioCodecParamsRTPTimeFormat,
+                                                           .isOptional = false, // TODO - make this optional for write
+                                                           .isFlat = false };
+
 /* ---------------------------------------------------------------------------------------------*/
 
 const HAPUInt16TLVFormat audioCodecTypeFormat = { .type = kHAPTLVFormatType_UInt16,
@@ -92,6 +103,7 @@ const AudioCodecConfigFormat audioCodecParamsFormat = {
     .members = (const HAPStructTLVMember* const[]) { &audioCodecParamsAudioChannelsMember,
                                                      &audioCodecParamsBitRateMember,
                                                      &audioCodecParamsSampleRateMember,
+                                                     &audioCodecParamsRTPTimeMember,
                                                      NULL },
     .callbacks = { .isValid = isValid }
 };
@@ -198,7 +210,7 @@ const HAPStructTLVMember videoCodecParamsCVOEnabledMember = { .valueOffset =
                                                               .tlvType = 4,
                                                               .debugDescription = "CVO Enabled",
                                                               .format = &videoCodecParamsCVOEnabledFormat,
-                                                              .isOptional = false,
+                                                              .isOptional = true,
                                                               .isFlat = false };
 
 /* ---------------------------------------------------------------------------------------------*/
@@ -221,7 +233,7 @@ const VideoCodecConfigFormat videoCodecParamsFormat = {
     .members = (const HAPStructTLVMember* const[]) { &videoCodecParamsProfileIDMember,
                                                      &videoCodecParamsLevelMember,
                                                      &videoCodecParamsPacketizationModeMember,
-                                                     &videoCodecParamsCVOEnabledMember,
+                                                     //  &videoCodecParamsCVOEnabledMember,
                                                      NULL },
     .callbacks = { .isValid = isValid }
 };
@@ -299,6 +311,7 @@ const VideoCodecConfigFormat videoCodecConfigFormat = {
                                                      NULL },
     .callbacks = { .isValid = isValid }
 };
+
 const HAPStructTLVMember videoCodecConfigMember = { .valueOffset =
                                                             HAP_OFFSETOF(supportedVideoConfigStruct, videoCodecConfig),
                                                     .isSetOffset = 0,

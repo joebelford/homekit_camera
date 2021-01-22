@@ -38,7 +38,6 @@ typedef struct {
 typedef struct {
     audioCodecConfigStruct audioCodecConfig;
     uint8_t comfortNoiseSupport;
-
 } supportedAudioConfigStruct;
 
 typedef struct {
