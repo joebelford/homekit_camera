@@ -154,7 +154,7 @@ typedef struct {
 
 HAPError handleSessionRead(HAPTLVWriterRef* responseWriter, streamingSession* session);
 
-HAPError handleSessionWrite(HAPTLVReaderRef* responseReader, streamingSession* settings);
+HAPError handleSessionWrite(HAPTLVReaderRef* responseReader, streamingSession* session);
 
 HAPError handleSelectedWrite(HAPTLVReaderRef* responseReader, selectedRTPStruct* selectedRTP);
 
