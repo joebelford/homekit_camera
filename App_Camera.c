@@ -11,7 +11,7 @@
 #include "App_Camera.h"
 #include "App.h"
 #include "DB.h"
-#include "StreamingConfiguration.h"
+#include "streaming.h"
 
 bool isValid(void* unsused HAP_UNUSED) {
     return true;

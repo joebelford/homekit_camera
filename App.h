@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 #include "HAP.h"
-#include "StreamingSession.h"
+#include "streaming.h"
 
 #if __has_feature(nullability)
 #pragma clang assume_nonnull begin
