@@ -1,12 +1,12 @@
 /**
  * @file Ffmpeg.c
  * @author your name (you@domain.com)
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2021-01-22
- * 
+ *
  * @copyright Copyright (c) 2021
- * 
+ *
  */
 
 #include "HAP.h"
@@ -17,46 +17,51 @@
 #include "DB.h"
 #include "streaming.h"
 #include <arpa/inet.h>
-#include "External/Base64/util_base64.h"
+#include "util_base64.h"
 
-HAPError createCommand(void* context){
+HAPError createCommand(void* context) {
     AccessoryContext* myContext = context;
     streamingSession* mySession = &myContext->session;
-    const char accessoryAddress[INET_ADDRSTRLEN];
-    (void*) inet_ntop(AF_INET, &mySession->controllerAddress.ipAddress, accessoryAddress, INET_ADDRSTRLEN );
+    char accessoryAddress[INET_ADDRSTRLEN];
+    HAPRawBufferZero(accessoryAddress, INET_ADDRSTRLEN);
+    (void) inet_ntop(AF_INET, &mySession->controllerAddress.ipAddress, accessoryAddress, INET_ADDRSTRLEN);
     uint8_t ssrcBuffer[KEYLENGTH + SALTLENGTH];
-    HAPRawBufferCopyBytes(ssrcBuffer, mySession->videoParams.srtpMasterKey, KEYLENGTH);
-    HAPRawBufferCopyBytes(ssrcBuffer[UUIDLENGTH], mySession->videoParams.srtpMasterSalt, SALTLENGTH);
+    HAPRawBufferZero(ssrcBuffer, KEYLENGTH + SALTLENGTH);
+    HAPRawBufferCopyBytes(&ssrcBuffer, mySession->videoParams.srtpMasterKey, KEYLENGTH);
+    HAPRawBufferCopyBytes(&ssrcBuffer[UUIDLENGTH], mySession->videoParams.srtpMasterSalt, SALTLENGTH);
     size_t ssrc64bufferLength = util_base64_encoded_len(sizeof(ssrcBuffer));
-    size_t* ssrc64length;
+    size_t ssrc64length;
     char ssrc64[ssrc64bufferLength];
-    util_base64_encode(ssrcBuffer, sizeof(ssrcBuffer), ssrc64, ssrc64bufferLength, ssrc64length);
-
+    HAPRawBufferZero(ssrc64, ssrc64bufferLength);
+    util_base64_encode(ssrcBuffer, KEYLENGTH + SALTLENGTH, ssrc64, ssrc64bufferLength, &ssrc64length);
+    ssrc64[ssrc64length] = '\0';
     HAPStringBuilderRef stringBuilder;
     char stringBuffer[1024];
     HAPStringBuilderCreate(&stringBuilder, stringBuffer, 1024);
-    
-    HAPStringBuilderAppend(&stringBuilder,
-    "/usr/bin/ffmpeg -re -f avfoundation -framerate %d -i 0:0 -threads 0 \
-    -vcodec libx264 -an -pix_fmt yuv420p -r %d -f rawvideo -tune zerolatency \
-    -vf scale=%lu:%lu -b:v %lu -bufsize %lu -payload_type %d -ssrc %lu -f rtp \
-    -srtp_out_suite AES_CM_128_HMAC_SHA1_80 -srtp_out_params %s \
-    srtp://%s:%lu?rtcpport=%lu&localrtcpport=%lu&pkt_size=&lu",
-    mySession->videoParameters.codecConfig.videoAttributes.frameRate,
-    mySession->videoParameters.codecConfig.videoAttributes.frameRate,
-    mySession->videoParameters.codecConfig.videoAttributes.imageWidth,
-    mySession->videoParameters.codecConfig.videoAttributes.imageHeight,
-    mySession->videoParameters.vRtpParameters.vRtpParameters.maximumBitrate, // -b:v
-    mySession->videoParameters.vRtpParameters.vRtpParameters.maximumBitrate, //bufsize
-    mySession->videoParameters.vRtpParameters.vRtpParameters.payloadType,
-    mySession->videoParameters.vRtpParameters.vRtpParameters.ssrc,
-    ssrc64, // base64 encode key+salt
-    accessoryAddress,
-    mySession->controllerAddress.videoPort, //remote
-    mySession->controllerAddress.videoPort, //rtcp
-    mySession->controllerAddress.videoPort, //local
-    mySession->videoParameters.vRtpParameters.maxMTU
-    );
+
+    HAPStringBuilderAppend(
+            &stringBuilder,
+            "/usr/bin/ffmpeg -re -f avfoundation -framerate %d -i 0:0 -threads 0 \
+-vcodec libx264 -an -pix_fmt yuv420p -r %d -f rawvideo -tune zerolatency \
+-vf scale=%u:%u -b:v %u -bufsize %u -payload_type %d -ssrc %u -f rtp \
+-srtp_out_suite AES_CM_128_HMAC_SHA1_80 -srtp_out_params %s \
+srtp://%s:%u?rtcpport=%u&localrtcpport=%u&pkt_size=%u",
+            mySession->videoParameters.codecConfig.videoAttributes.frameRate,
+            mySession->videoParameters.codecConfig.videoAttributes.frameRate,
+            mySession->videoParameters.codecConfig.videoAttributes.imageWidth,
+            mySession->videoParameters.codecConfig.videoAttributes.imageHeight,
+            mySession->videoParameters.vRtpParameters.vRtpParameters.maximumBitrate, // -b:v
+            mySession->videoParameters.vRtpParameters.vRtpParameters.maximumBitrate, // bufsize
+            mySession->videoParameters.vRtpParameters.vRtpParameters.payloadType,
+            mySession->videoParameters.vRtpParameters.vRtpParameters.ssrc,
+            ssrc64, // base64 encode key+salt
+            accessoryAddress,
+            mySession->controllerAddress.videoPort, // remote
+            mySession->controllerAddress.videoPort, // rtcp
+            mySession->controllerAddress.videoPort, // local
+            mySession->videoParameters.vRtpParameters.maxMTU);
+    HAPLogDebug(&kHAPLog_Default, "%s\n", HAPStringBuilderGetString(&stringBuilder));
+    return kHAPError_None;
 }
 
 /* Borrowed from HAP-python until I figure it out
