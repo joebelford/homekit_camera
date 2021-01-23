@@ -622,14 +622,66 @@ HAPError HandleSelectedRTPConfigWrite(
 
     HAPLogInfo(&kHAPLog_Default, "%s", __func__);
 
-    HAPError err;
+    AccessoryContext* myContext = context;
+    selectedRTPStruct selectedRtp;
 
-    // Simply validate input.
-    err = HAPTLVReaderGetAll(requestReader, (HAPTLV* const[]) { NULL });
-    if (err) {
-        HAPAssert(err == kHAPError_InvalidData);
-        return err;
+    handleSelectedWrite(requestReader, &selectedRtp);
+
+    if (HAPRawBufferAreEqual(myContext->session.sessionId, selectedRtp.control.sessionId, UUIDLENGTH)) {
+        if ( selectedRtp.control.command == kHAPCharacteristicValue_RTPCommand_Start )
+        {
+            /* start streaming */
+        }
+                
     }
+
+    // HAPError err;
+
+    // const HAPTLVReader* myReader = (const HAPTLVReader*)requestReader;
+    // HAPLogDebug(&kHAPLog_Default, "numBytes: %lu\n", myReader->numBytes);
+    // for (size_t i = 0; i < myReader->numBytes; i++)
+    // {
+    //     HAPLogDebug(&kHAPLog_Default, "0x%02X", ((uint8_t*)myReader->bytes)[i]);
+    // }
+
+    /*    HAPTLV sessionControlTLV, selectedVideoTLV, selectedAudioTLV;
+        sessionControlTLV.type = 1;
+        selectedVideoTLV.type = 2;
+        selectedAudioTLV.type = 3;
+
+         HAPTLV* tlvs[] = {&sessionControlTLV, &selectedVideoTLV, &selectedAudioTLV, NULL};
+
+        // Simply validate input.
+        err = HAPTLVReaderGetAll(requestReader, tlvs);
+        if (err) {
+            HAPAssert(err == kHAPError_InvalidData);
+            return err;
+        }
+
+        for (HAPTLV* const* tlvItem = tlvs; *tlvItem; tlvItem++) {
+            HAPLogDebug(&kHAPLog_Default, "tlvType: %d, tlvSize: %lu\n", (*tlvItem)->type, (*tlvItem)->value.numBytes );
+        } */
+    // Get TLV item.
+    // HAPTLV tlv;
+    // bool valid;
+    // err = HAPTLVReaderGetNext(&reader, &valid, &tlv);
+    // HAPAssert(!err);
+    // HAPAssert(valid);
+
+    // Compare TLV item.
+    // HAPAssert(tlv.type == (*tlvItem)->type);
+    // HAPAssert(tlv.value.numBytes == (*tlvItem)->value.numBytes);
+    // if (!(*tlvItem)->value.bytes) {
+    //     HAPAssert(!tlv.value.bytes);
+    // } else {
+    //     HAPAssert(tlv.value.bytes);
+    //     HAPAssert(HAPRawBufferAreEqual(
+    //             HAPNonnullVoid(tlv.value.bytes), HAPNonnullVoid((*tlvItem)->value.bytes), tlv.value.numBytes));
+
+    //     // Check for NULL-terminator after TLV.
+    //     HAPAssert(!((const uint8_t*) tlv.value.bytes)[tlv.value.numBytes]);
+    // }
+
     return kHAPError_None;
 }
 
@@ -642,10 +694,10 @@ HAPError HandleSetupEndpointsRead(
 
     HAPLogInfo(&kHAPLog_Default, "%s", __func__);
     HAPError err;
-    AccessoryContext *myContext = context;
+    AccessoryContext* myContext = context;
     streamingSession* newSession = &(myContext->session);
 
-    controllerAddressStruct accesoryAddress = newSession->controller_address;
+    controllerAddressStruct accesoryAddress = newSession->controllerAddress;
 
     const char ipAddress[] = "10.0.1.5";
     in_addr_t ia;
@@ -657,11 +709,11 @@ HAPError HandleSetupEndpointsRead(
     };
 
     accesoryAddress.ipAddress = ia;
-    newSession->accessory_address = accesoryAddress;
+    newSession->accessoryAddress = accesoryAddress;
     newSession->status = kHAPCharacteristicValue_StreamingStatus_Available;
     newSession->ssrcVideo = 1;
     newSession->ssrcAudio = 1;
-    err = handleRead(responseWriter, &(myContext->session));
+    err = handleSessionRead(responseWriter, &(myContext->session));
 
     return err;
     /*
@@ -717,6 +769,7 @@ HAPError HandleSetupEndpointsWrite(
 
     return kHAPError_None;
     err = handleWrite(requestReader, newSession);
+    err = handleSessionWrite(requestReader, newSession);
     return err;
 }
 
