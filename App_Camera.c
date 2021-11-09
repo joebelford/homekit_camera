@@ -750,53 +750,44 @@ HAPError HandleSetupEndpointsWrite(
     // HAPPrecondition(requestReader);
 
     HAPLogInfo(&kHAPLog_Default, "%s", __func__);
-
+    bool found;
     HAPError err;
     AccessoryContext* myContext = context;
     streamingSession* newSession = &(myContext->session);
 
     if (found) {
         HAPLogInfo(&kHAPLog_Default, "Found a TLV");
-/*         size_t n = sizeof(const) / sizeof(const[0]);
-        for (size_t i = 0; i < n; ++i) {
-            HAPLogTLV(&kHAPLog_Default, 3, "jb_debug", "jb_debug2");
-        } */
-    accesoryAddress.ipAddress = ia;
-    newSession->accessoryAddress = accesoryAddress;
-    newSession->ssrcVideo = 1;
-    newSession->ssrcAudio = 1;
-    newSession->status = accessoryConfiguration.state.streaming;
-    if (found) {
-        HAPLogInfo(&kHAPLog_Default, "Found a TLV");
+        /*         size_t n = sizeof(const) / sizeof(const[0]);
+                for (size_t i = 0; i < n; ++i) {
+                    HAPLogTLV(&kHAPLog_Default, 3, "jb_debug", "jb_debug2");
+                } */
+
+        err = handleWrite(requestReader, newSession);
+        err = handleSessionWrite(requestReader, newSession);
+
+        controllerAddressStruct accesoryAddress = newSession->controllerAddress;
+
+        const char ipAddress[] = "10.0.1.5";
+        in_addr_t ia;
+        int s;
+        s = inet_pton(AF_INET, ipAddress, &ia);
+        if (s <= 0) {
+            HAPLogError(&kHAPLog_Default, "%s\n", "Invalid address");
+            return kHAPError_InvalidData;
+        };
+
+        accesoryAddress.ipAddress = ia;
+        newSession->accessoryAddress = accesoryAddress;
+        newSession->ssrcVideo = 1;
+        newSession->ssrcAudio = 1;
+        newSession->status = accessoryConfiguration.state.streaming;
     }
-
-    return kHAPError_None;
-    err = handleWrite(requestReader, newSession);
-    err = handleSessionWrite(requestReader, newSession);
-
-    controllerAddressStruct accesoryAddress = newSession->controllerAddress;
-
-    const char ipAddress[] = "10.0.1.5";
-    in_addr_t ia;
-    int s;
-    s = inet_pton(AF_INET, ipAddress, &ia);
-    if (s <= 0) {
-        HAPLogError(&kHAPLog_Default, "%s\n", "Invalid address");
-        return kHAPError_InvalidData;
-    };
-
-    accesoryAddress.ipAddress = ia;
-    newSession->accessoryAddress = accesoryAddress;
-    newSession->ssrcVideo = 1;
-    newSession->ssrcAudio = 1;
-    newSession->status = accessoryConfiguration.state.streaming;
-
     return kHAPError_None;
 }
 
 HAP_RESULT_USE_CHECK
 HAPError HandleMicMuteRead(
-        HAPAccessoryServerRef* server HAP_UNUSED,
+        HAPAccessoryServerRef * server HAP_UNUSED,
         const HAPBoolCharacteristicReadRequest* request HAP_UNUSED,
         bool* value,
         void* _Nullable context HAP_UNUSED) {
