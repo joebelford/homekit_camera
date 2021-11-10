@@ -209,11 +209,17 @@ void AppInitialize(
 
 void ContextInitialize(AccessoryContext* context){
     memset(context, 0, sizeof(AccessoryContext));
-    // context->session->status = kHAPCharacteristicValue_StreamingStatus_Available;
+    memset(context->session.sessionId, 0, UUIDLENGTH);
+    context->session.status = kHAPCharacteristicValue_StreamingStatus_Available;
 //    context->session->ip_address = Set this up later.
 }
 
 void ContextDeintialize(AccessoryContext* context){
+    if (context->streamingThread)
+    {
+        pthread_cancel(context->streamingThread);
+    }
+    
     free(context);
 }
 

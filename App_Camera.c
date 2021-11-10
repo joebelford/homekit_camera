@@ -12,6 +12,7 @@
 #include "App.h"
 #include "DB.h"
 #include "streaming.h"
+#include "Ffmpeg.h"
 
 bool isValid(void* unsused HAP_UNUSED) {
     return true;
@@ -619,7 +620,6 @@ HAPError HandleSelectedRTPConfigWrite(
         HAPTLVReaderRef* requestReader,
         void* _Nullable context HAP_UNUSED) {
     HAPPrecondition(requestReader);
-
     HAPLogInfo(&kHAPLog_Default, "%s", __func__);
 
     AccessoryContext* myContext = context;
@@ -628,11 +628,30 @@ HAPError HandleSelectedRTPConfigWrite(
     handleSelectedWrite(requestReader, &selectedRtp);
 
     if (HAPRawBufferAreEqual(myContext->session.sessionId, selectedRtp.control.sessionId, UUIDLENGTH)) {
-        if ( selectedRtp.control.command == kHAPCharacteristicValue_RTPCommand_Start )
-        {
-            /* start streaming */
+        myContext->session.videoParameters = selectedRtp.videoParameters;
+        myContext->session.audioParameters = selectedRtp.audioParameters;
+        if (selectedRtp.control.command == kHAPCharacteristicValue_RTPCommand_Start) {
+            HAPLogDebug(&kHAPLog_Default, "Starting stream.");
+            pthread_create(&myContext->streamingThread, NULL, startStream, context);
+            accessoryConfiguration.state.streaming = kHAPCharacteristicValue_StreamingStatus_InUse;
+            // startStream(context);
+        } else if (selectedRtp.control.command == kHAPCharacteristicValue_RTPCommand_End) {
+            HAPLogDebug(&kHAPLog_Default, "Ending Stream.");
+            accessoryConfiguration.state.streaming = kHAPCharacteristicValue_StreamingStatus_Available;
+            if (myContext->streamingThread) {
+                int s;
+                s = pthread_cancel(myContext->streamingThread);
+                if(s) {
+                    HAPLogDebug(&kHAPLog_Default, "Thread didn't cancel.");
+                }
+                myContext->streamingThread = 0;
+            }
+        } else if (selectedRtp.control.command == kHAPCharacteristicValue_RTPCommand_Reconfigure) {
+            HAPLogDebug(&kHAPLog_Default, "Reconfiguring Stream.");
+            /* code */
+        } else {
+            HAPLogDebug(&kHAPLog_Default, "control command: %d", selectedRtp.control.command);
         }
-                
     }
 
     // HAPError err;
@@ -695,24 +714,8 @@ HAPError HandleSetupEndpointsRead(
     HAPLogInfo(&kHAPLog_Default, "%s", __func__);
     HAPError err;
     AccessoryContext* myContext = context;
-    streamingSession* newSession = &(myContext->session);
+    // streamingSession* newSession = &(myContext->session);
 
-    controllerAddressStruct accesoryAddress = newSession->controllerAddress;
-
-    const char ipAddress[] = "10.0.1.5";
-    in_addr_t ia;
-    int s;
-    s = inet_pton(AF_INET, ipAddress, &ia);
-    if (s <= 0) {
-        HAPLogError(&kHAPLog_Default, "%s\n", "Invalid address");
-        return kHAPError_InvalidData;
-    };
-
-    accesoryAddress.ipAddress = ia;
-    newSession->accessoryAddress = accesoryAddress;
-    newSession->status = kHAPCharacteristicValue_StreamingStatus_Available;
-    newSession->ssrcVideo = 1;
-    newSession->ssrcAudio = 1;
     err = handleSessionRead(responseWriter, &(myContext->session));
 
     return err;
@@ -770,7 +773,25 @@ HAPError HandleSetupEndpointsWrite(
     return kHAPError_None;
     err = handleWrite(requestReader, newSession);
     err = handleSessionWrite(requestReader, newSession);
-    return err;
+
+    controllerAddressStruct accesoryAddress = newSession->controllerAddress;
+
+    const char ipAddress[] = "10.0.1.5";
+    in_addr_t ia;
+    int s;
+    s = inet_pton(AF_INET, ipAddress, &ia);
+    if (s <= 0) {
+        HAPLogError(&kHAPLog_Default, "%s\n", "Invalid address");
+        return kHAPError_InvalidData;
+    };
+
+    accesoryAddress.ipAddress = ia;
+    newSession->accessoryAddress = accesoryAddress;
+    newSession->ssrcVideo = 1;
+    newSession->ssrcAudio = 1;
+    newSession->status = accessoryConfiguration.state.streaming;
+
+    return kHAPError_None;
 }
 
 HAP_RESULT_USE_CHECK

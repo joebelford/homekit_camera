@@ -19,6 +19,7 @@ extern "C" {
 
 #include "HAP.h"
 #include "streaming.h"
+#include <pthread.h>
 
 #if __has_feature(nullability)
 #pragma clang assume_nonnull begin
@@ -47,6 +48,7 @@ static AccessoryConfiguration accessoryConfiguration;
 
 typedef struct {
     streamingSession session;
+    pthread_t streamingThread;
 } AccessoryContext;
 
 /**
