@@ -307,7 +307,7 @@ int main(int argc HAP_UNUSED, char* _Nullable argv[_Nullable] HAP_UNUSED) {
             &platform.hapPlatform,
             &platform.hapAccessoryServerCallbacks,
             &context);
-            // /* context: */ NULL);
+    // /* context: */ NULL);
 
     // Create app object.
     AppCreate(&accessoryServer, &platform.keyValueStore);
@@ -321,7 +321,7 @@ int main(int argc HAP_UNUSED, char* _Nullable argv[_Nullable] HAP_UNUSED) {
 
     // Cleanup.
     AppRelease();
-    
+
     ContextDeintialize(&context);
 
     HAPAccessoryServerRelease(&accessoryServer);

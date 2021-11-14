@@ -38,13 +38,12 @@ typedef struct {
         } motion;
         HAPCharacteristicValue_StreamingStatus streaming;
     } state;
-    char ipAddress [9]; //TODO - hardcode for now
+    char ipAddress[9]; // TODO - hardcode for now
     HAPAccessoryServerRef* server;
     HAPPlatformKeyValueStoreRef keyValueStore;
 } AccessoryConfiguration;
 
 static AccessoryConfiguration accessoryConfiguration;
-
 
 typedef struct {
     streamingSession session;
@@ -59,7 +58,6 @@ HAPError IdentifyAccessory(
         HAPAccessoryServerRef* server,
         const HAPAccessoryIdentifyRequest* request,
         void* _Nullable context);
-
 
 void SaveAccessoryState(void);
 

@@ -103,7 +103,8 @@ void* startStream(void* context HAP_UNUSED) {
         fprintf(stderr, "Failed to open input stream");
         goto end;
     }
-    fprintf(stderr, "line 106\n"); //TODO - failing here!  Wonder if the connection is still open and I'm not cleaning something up!
+    fprintf(stderr, "line 106\n"); // TODO - failing here!  Wonder if the connection is still open and I'm not cleaning
+                                   // something up!
     if (avformat_find_stream_info(rtspStream->format_context, NULL) < 0) {
         fprintf(stderr, "Failed to retrieve input stream information");
         goto end;

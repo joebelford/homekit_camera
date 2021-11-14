@@ -455,52 +455,46 @@ HAPError HandleSupportedVideoRead(
 
     const HAPTLV videoAttributes720TLV = {
         .type = 3,
-        .value = { .bytes =
-                           (const HAPTLV* const[]) {
-                                   &(const HAPTLV) {
-                                           .type = 1,
-                                           .value = { .bytes = (uint16_t[]) { 1280 }, .numBytes = 2 } }, // Width
-                                   &(const HAPTLV) {
-                                           .type = 2,
-                                           .value = { .bytes = (uint16_t[]) { 720 }, .numBytes = 2 } }, // Height
-                                   &(const HAPTLV) {
-                                           .type = 3,
-                                           .value = { .bytes = (uint8_t[]) { 30 }, .numBytes = 1 } }, // Framerate
-                           NULL },
+        .value = { .bytes = (const HAPTLV* const[]) { &(const HAPTLV) { .type = 1,
+                                                                        .value = { .bytes = (uint16_t[]) { 1280 },
+                                                                                   .numBytes = 2 } }, // Width
+                                                      &(const HAPTLV) { .type = 2,
+                                                                        .value = { .bytes = (uint16_t[]) { 720 },
+                                                                                   .numBytes = 2 } }, // Height
+                                                      &(const HAPTLV) { .type = 3,
+                                                                        .value = { .bytes = (uint8_t[]) { 30 },
+                                                                                   .numBytes = 1 } }, // Framerate
+                                                      NULL },
                    .numBytes = 5 + (3 * 2) }
     };
 
-        const HAPTLV videoAttributes320TLV = {
+    const HAPTLV videoAttributes320TLV = {
         .type = 3,
-        .value = { .bytes =
-                           (const HAPTLV* const[]) {
-                                   &(const HAPTLV) {
-                                           .type = 1,
-                                           .value = { .bytes = (uint16_t[]) { 320 }, .numBytes = 2 } }, // Width
-                                   &(const HAPTLV) {
-                                           .type = 2,
-                                           .value = { .bytes = (uint16_t[]) { 240 }, .numBytes = 2 } }, // Height
-                                   &(const HAPTLV) {
-                                           .type = 3,
-                                           .value = { .bytes = (uint8_t[]) { 15 }, .numBytes = 1 } }, // Framerate
-                           NULL },
+        .value = { .bytes = (const HAPTLV* const[]) { &(const HAPTLV) { .type = 1,
+                                                                        .value = { .bytes = (uint16_t[]) { 320 },
+                                                                                   .numBytes = 2 } }, // Width
+                                                      &(const HAPTLV) { .type = 2,
+                                                                        .value = { .bytes = (uint16_t[]) { 240 },
+                                                                                   .numBytes = 2 } }, // Height
+                                                      &(const HAPTLV) { .type = 3,
+                                                                        .value = { .bytes = (uint8_t[]) { 15 },
+                                                                                   .numBytes = 1 } }, // Framerate
+                                                      NULL },
                    .numBytes = 5 + (3 * 2) }
     };
 
     const HAPTLV videoAttributes640TLV = {
         .type = 3,
-        .value = { .bytes =
-                           (const HAPTLV* const[]) {
-                                   &(const HAPTLV) {
-                                           .type = 1,
-                                           .value = { .bytes = (uint16_t[]) { 640 }, .numBytes = 2 } }, // Width
-                                   &(const HAPTLV) {
-                                           .type = 2,
-                                           .value = { .bytes = (uint16_t[]) { 480 }, .numBytes = 2 } }, // Height
-                                   &(const HAPTLV) {
-                                           .type = 3,
-                                           .value = { .bytes = (uint8_t[]) { 30 }, .numBytes = 1 } }, // Framerate
-                           NULL },
+        .value = { .bytes = (const HAPTLV* const[]) { &(const HAPTLV) { .type = 1,
+                                                                        .value = { .bytes = (uint16_t[]) { 640 },
+                                                                                   .numBytes = 2 } }, // Width
+                                                      &(const HAPTLV) { .type = 2,
+                                                                        .value = { .bytes = (uint16_t[]) { 480 },
+                                                                                   .numBytes = 2 } }, // Height
+                                                      &(const HAPTLV) { .type = 3,
+                                                                        .value = { .bytes = (uint8_t[]) { 30 },
+                                                                                   .numBytes = 1 } }, // Framerate
+                                                      NULL },
                    .numBytes = 5 + (3 * 2) }
     };
 
@@ -515,18 +509,18 @@ HAPError HandleSupportedVideoRead(
                                                       &videoCVOEnabledTLV,
                                                       NULL },
                    .numBytes = videoCodecTypeTLV.value.numBytes + videoCodecParamsTLV.value.numBytes +
-                               videoAttributes1080TLV.value.numBytes + videoAttributes720TLV.value.numBytes + 
-                               + videoAttributes320TLV.value.numBytes + videoAttributes640TLV.value.numBytes
-                               + videoCVOEnabledTLV.value.numBytes + (5 * 2) }
+                               videoAttributes1080TLV.value.numBytes + videoAttributes720TLV.value.numBytes +
+                               +videoAttributes320TLV.value.numBytes + videoAttributes640TLV.value.numBytes +
+                               videoCVOEnabledTLV.value.numBytes + (5 * 2) }
     };
 
     err = HAPTLVWriterAppend(responseWriter, &videoCodecConfigTLV);
     HAPAssert(!err);
     return kHAPError_None;
 
-/*     err = HAPTLVWriterEncode(responseWriter, &supportedVideoConfigFormat, &supportedVideoConfigValue);
-    HAPAssert(!err);
-    return kHAPError_None; */
+    /*     err = HAPTLVWriterEncode(responseWriter, &supportedVideoConfigFormat, &supportedVideoConfigValue);
+        HAPAssert(!err);
+        return kHAPError_None; */
 
     err = handleVideoRead(responseWriter);
     return err;
@@ -572,7 +566,7 @@ HAPError HandleSupportedVideoRead(
             void* actualBytes;
             size_t numActualBytes;
             HAPTLVWriterGetBuffer(responseWriter, &actualBytes, &numActualBytes);
-            err = VerifyCodecConfigTLV(actualBytes, numActualBytes); 
+            err = VerifyCodecConfigTLV(actualBytes, numActualBytes);
 
     return kHAPError_None;*/
     err = handleVideoRead(responseWriter);
@@ -641,7 +635,7 @@ HAPError HandleSelectedRTPConfigWrite(
             if (myContext->streamingThread) {
                 int s;
                 s = pthread_cancel(myContext->streamingThread);
-                if(s) {
+                if (s) {
                     HAPLogDebug(&kHAPLog_Default, "Thread didn't cancel.");
                 }
                 myContext->streamingThread = 0;
@@ -787,7 +781,7 @@ HAPError HandleSetupEndpointsWrite(
 
 HAP_RESULT_USE_CHECK
 HAPError HandleMicMuteRead(
-        HAPAccessoryServerRef * server HAP_UNUSED,
+        HAPAccessoryServerRef* server HAP_UNUSED,
         const HAPBoolCharacteristicReadRequest* request HAP_UNUSED,
         bool* value,
         void* _Nullable context HAP_UNUSED) {

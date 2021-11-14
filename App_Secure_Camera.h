@@ -18,7 +18,6 @@ extern "C" {
 #pragma clang assume_nonnull begin
 #endif
 
-
 HAP_RESULT_USE_CHECK
 HAPError HandleEventSnapActiveRead(
         HAPAccessoryServerRef* server,

@@ -25,7 +25,7 @@ extern "C" {
 
 extern HAPError createCommand(void* context);
 
-struct{
+struct {
     uint32_t ssrc;
 } ssrcStruct;
 
@@ -33,7 +33,7 @@ void checkSsrc() {
     uint8_t ssrcBytes[] = { 0x87, 0x61, 0xC2, 0xB8 };
     uint32_t ssrc = HAPReadLittleInt32(ssrcBytes);
 
-    uint32_t hostSSRC =  htonl(ssrc);
+    uint32_t hostSSRC = htonl(ssrc);
 
     HAPLogDebug(&kHAPLog_Default, "hostSSRC: %u\n", hostSSRC);
 }
@@ -44,21 +44,21 @@ int main() {
 
     static AccessoryContext context;
     startStream(&context);
-/*     HAPError err;
-    HAPAccessoryServerRef server;
-    const HAPTLV8CharacteristicWriteRequest request;
+    /*     HAPError err;
+        HAPAccessoryServerRef server;
+        const HAPTLV8CharacteristicWriteRequest request;
 
-    HAPTLVReaderRef setupEndpointsReader;
+        HAPTLVReaderRef setupEndpointsReader;
 
-    uint8_t setupEndpointsBytes[sizeof(setupEndpoints)];
-    HAPRawBufferCopyBytes(&setupEndpointsBytes, &setupEndpoints, sizeof(setupEndpoints));
-    HAPTLVReaderCreateWithOptions(
-            &setupEndpointsReader,
-            &(const HAPTLVReaderOptions) { .bytes = setupEndpointsBytes,
-                                           .numBytes = HAPArrayCount(setupEndpointsBytes),
-                                           .maxBytes = HAPArrayCount(setupEndpointsBytes) });
-    err = HandleSetupEndpointsWrite(&server, &request, &setupEndpointsReader, &context);
-    HAPAssert(!err); */
+        uint8_t setupEndpointsBytes[sizeof(setupEndpoints)];
+        HAPRawBufferCopyBytes(&setupEndpointsBytes, &setupEndpoints, sizeof(setupEndpoints));
+        HAPTLVReaderCreateWithOptions(
+                &setupEndpointsReader,
+                &(const HAPTLVReaderOptions) { .bytes = setupEndpointsBytes,
+                                               .numBytes = HAPArrayCount(setupEndpointsBytes),
+                                               .maxBytes = HAPArrayCount(setupEndpointsBytes) });
+        err = HandleSetupEndpointsWrite(&server, &request, &setupEndpointsReader, &context);
+        HAPAssert(!err); */
 
     // Test setupendpoints read
     // HAPTLVWriterRef setupEndpointsWriter;
@@ -71,16 +71,16 @@ int main() {
 
     // Test Selected RTP write
 
-/*     uint8_t setupBytes[sizeof(selectedRTP)];
-    HAPRawBufferZero(setupBytes, sizeof(setupBytes));
-    HAPRawBufferCopyBytes(&setupBytes, &selectedRTP, sizeof(selectedRTP)); // make a copy so we can compare later
-    HAPTLVReaderRef selectedRTPReader;
-    HAPTLVReaderCreateWithOptions(
-            &selectedRTPReader,
-            &(const HAPTLVReaderOptions) {
-                    .bytes = setupBytes, .numBytes = sizeof(selectedRTP), .maxBytes = HAPArrayCount(setupBytes) });
+    /*     uint8_t setupBytes[sizeof(selectedRTP)];
+        HAPRawBufferZero(setupBytes, sizeof(setupBytes));
+        HAPRawBufferCopyBytes(&setupBytes, &selectedRTP, sizeof(selectedRTP)); // make a copy so we can compare later
+        HAPTLVReaderRef selectedRTPReader;
+        HAPTLVReaderCreateWithOptions(
+                &selectedRTPReader,
+                &(const HAPTLVReaderOptions) {
+                        .bytes = setupBytes, .numBytes = sizeof(selectedRTP), .maxBytes = HAPArrayCount(setupBytes) });
 
-    err = HandleSelectedRTPConfigWrite(&server, &request, &selectedRTPReader, &context); */
+        err = HandleSelectedRTPConfigWrite(&server, &request, &selectedRTPReader, &context); */
 
     // createCommand(&context);
 
