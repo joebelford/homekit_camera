@@ -37,6 +37,11 @@ typedef struct {
             bool detected;
         } motion;
         HAPCharacteristicValue_StreamingStatus streaming;
+        struct {
+            bool homekitActive;
+            HAPCharacteristicValue_Active recordingActive;
+        } operatingMode;
+    HAPCharacteristicValue_Active active;
     } state;
     char ipAddress[9]; // TODO - hardcode for now
     HAPAccessoryServerRef* server;

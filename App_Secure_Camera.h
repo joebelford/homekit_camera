@@ -109,6 +109,20 @@ HAPError HandleSupportedVidRecConfRead(
         HAPTLVWriterRef* responseWriter,
         void* _Nullable context);
 
+HAP_RESULT_USE_CHECK
+HAPError HandleRTPActiveRead(
+        HAPAccessoryServerRef* server HAP_UNUSED,
+        const HAPUInt8CharacteristicReadRequest* request HAP_UNUSED,
+        HAPCharacteristicValue_Active* value,
+        void* _Nullable context HAP_UNUSED);
+
+HAP_RESULT_USE_CHECK
+HAPError HandleRTPActiveWrite(
+        HAPAccessoryServerRef* server,
+        const HAPUInt8CharacteristicWriteRequest* request,
+        HAPCharacteristicValue_Active value,
+        void* _Nullable context HAP_UNUSED);
+
 #if __has_feature(nullability)
 #pragma clang assume_nonnull end
 #endif

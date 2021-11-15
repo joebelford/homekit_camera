@@ -744,7 +744,7 @@ HAPError HandleSetupEndpointsWrite(
     // HAPPrecondition(requestReader);
 
     HAPLogInfo(&kHAPLog_Default, "%s", __func__);
-    bool found;
+    bool found = false;
     HAPError err;
     AccessoryContext* myContext = context;
     streamingSession* newSession = &(myContext->session);
@@ -756,7 +756,6 @@ HAPError HandleSetupEndpointsWrite(
                     HAPLogTLV(&kHAPLog_Default, 3, "jb_debug", "jb_debug2");
                 } */
 
-        err = handleWrite(requestReader, newSession);
         err = handleSessionWrite(requestReader, newSession);
 
         controllerAddressStruct accesoryAddress = newSession->controllerAddress;
