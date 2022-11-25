@@ -34,7 +34,13 @@ void* startStream(void* context HAP_UNUSED) {
     AccessoryContext* myContext = context;
     streamingSession* mySession = &myContext->session;
     HAPError err;
-
+    // TODO - Can't hardcode since it'll come from the controller.
+    struct in_addr ia;
+    inet_pton(AF_INET, "10.0.1.230", &(ia.s_addr));
+    mySession->controllerAddress.ipAddress = ia.s_addr;
+    //61673?rtcpport=61673&pkt_size=1316
+    mySession->controllerAddress.videoPort = 61673;
+    mySession->videoParameters.vRtpParameters.maxMTU = 1316;
     // Get IP Address
     char controllerAddress[INET_ADDRSTRLEN];
     HAPRawBufferZero(controllerAddress, INET_ADDRSTRLEN);
@@ -90,21 +96,27 @@ void* startStream(void* context HAP_UNUSED) {
             mySession->controllerAddress.videoPort,
             mySession->videoParameters.vRtpParameters.maxMTU);
 
+    AVPacket *pkt = NULL;
+    pkt = av_packet_alloc();
+    if (!pkt) {
+        fprintf(stderr, "Could not allocate AVPacket\n");
+        return NULL;
+    }
     // start rtsp stream
     rtsp_context* rtspStream = xmalloc(sizeof(rtsp_context));
+    rtspStream->format_context = NULL;
     rtspStream->opts = NULL;
-    int ret, stream_index;
-    rtspStream->url = "rtsp://admin:admin@10.0.1.234:554/ch01/0";
-    AVDictionary* rtspOptions = NULL;
-    av_dict_set(&rtspOptions, "rtsp_transport", "tcp", 0);
-    // av_dict_set(&rtspOptions, "framerate", "30", 0);
-    fprintf(stderr, "line 101\n");
-    if (avformat_open_input(&rtspStream->format_context, rtspStream->url, NULL, &rtspOptions) < 0) {
+    int ret;
+    int stream_index = 0;
+    int *stream_mapping = NULL;
+    int stream_mapping_size = 0;
+    rtspStream->url = "rtsp://admin:admin@10.0.1.252:554/ch01/0";
+    av_dict_set(&rtspStream->opts, "rtsp_transport", "tcp", 0);
+    // av_dict_set(&rtspStream->opts, "framerate", "30", 0);
+    if (avformat_open_input(&rtspStream->format_context, rtspStream->url, NULL, &rtspStream->opts) < 0) {
         fprintf(stderr, "Failed to open input stream");
         goto end;
     }
-    fprintf(stderr, "line 106\n"); // TODO - failing here!  Wonder if the connection is still open and I'm not cleaning
-                                   // something up!
     if (avformat_find_stream_info(rtspStream->format_context, NULL) < 0) {
         fprintf(stderr, "Failed to retrieve input stream information");
         goto end;
@@ -137,7 +149,7 @@ void* startStream(void* context HAP_UNUSED) {
             goto end;
         }
 
-        /* Copy codec parameters from input stream to output codec context */
+        /* Copy codec parameters from input stream to codec context */
         if ((ret = avcodec_parameters_to_context(rtspStream->codec_context, rtspStream->strm->codecpar)) < 0) {
             fprintf(stderr,
                     "Failed to copy %s codec parameters to decoder context\n",
@@ -155,86 +167,106 @@ void* startStream(void* context HAP_UNUSED) {
     rtspStream->width = rtspStream->codec_context->width;
     rtspStream->height = rtspStream->codec_context->height;
     rtspStream->pix_fmt = rtspStream->codec_context->pix_fmt;
-
     uint8_t* video_dst_data[4] = { NULL };
     int video_dst_linesize[4];
     int video_dst_bufsize;
-    ret = av_image_alloc(
+    ret = av_image_alloc( // TODO - Make sure this is freed
             video_dst_data, video_dst_linesize, rtspStream->width, rtspStream->height, rtspStream->pix_fmt, 1);
     if (ret < 0) {
         fprintf(stderr, "Could not allocate raw video buffer\n");
         goto end;
     }
     video_dst_bufsize = ret;
-
-    HAPLogDebug(&kHAPLog_Default, "stream opened, sleeping 10\n");
-    sleep(10);
-
-    //      srtp_context* srtpStream = xmalloc(sizeof(srtp_context));
-    //    srtpStream->opts = NULL;
-    // av_dict_set(&srtpStream->opts, "srtp_out_suite", "AES_CM_128_HMAC_SHA1_80", 0);
-    // av_dict_set(&srtpStream->opts, "srtp_out_params", ssrc64, 0);
-    // avformat_alloc_output_context2(&srtpStream->format_context, NULL, "mp4", controllerUrl);
-    /*     if (!srtpStream->format_context) {
-            printf("Could not create output context\n");
-            ret = AVERROR_UNKNOWN;
-            goto end;
-        } */
-    /*
-        AVOutputFormat* ofmt = NULL;
-        ofmt = srtpStream->format_context->oformat;
-        srtpStream->encoder->id = AV_CODEC_ID_H264;
-        // srtpStream->strm = avformat_new_stream(srtpStream->format_context, fileStream->format_context->video_codec);
-        // if(!srtpStream->strm){
-        //     goto end;
-        // }
-
-        // do more context stuff here
-
-        for (size_t i = 0; i < rtspStream->format_context->nb_streams; i++) {
-            // Create output AVStream according to input AVStream
-            AVStream* in_stream = rtspStream->format_context->streams[i];
-            AVStream* out_stream = avformat_new_stream(srtpStream->format_context, in_stream->codecpar);
-    //codec->codec); if (!out_stream) { printf("Failed allocating output stream\n"); ret = AVERROR_UNKNOWN; goto end;
-            }
-            // Copy the settings of AVCodecContext
-            ret = avcodec_copy_context(out_stream->codecpar, in_stream->codecpar);
-            if (ret < 0) {
-                printf("Failed to copy context from input to output stream codec context\n");
-                goto end;
-            }
-            out_stream->codecpar->codec_tag = 0;
-    // TODO - What is this for?
-            // if (srtpStream->format_context->oformat->flags & AVFMT_GLOBALHEADER)
-            //     out_stream->codec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-        }
-
-        // done with context stuff
-
-        av_dump_format(srtpStream->format_context, 0, controllerUrl, 1);
-
-        if (!(ofmt->flags & AVFMT_NOFILE)) {
-            ret = avio_open(&srtpStream->format_context->pb, controllerUrl, AVIO_FLAG_WRITE);
-            if (ret < 0) {
-                char err_buff[256];
-                av_strerror(ret, err_buff, sizeof(err_buff));
-                printf("Could not open output URL '%s'", err_buff);
-                goto end;
-            }
-        }
-
-        ret = avformat_init_output(srtpStream->format_context, &srtpStream->opts);
+    srtp_context* srtpStream = xmalloc(sizeof(srtp_context));
+    srtpStream->opts = NULL;
+    srtpStream->format_context = NULL;
+    av_dict_set(&srtpStream->opts, "srtp_out_suite", "AES_CM_128_HMAC_SHA1_80", 0);
+    av_dict_set(&srtpStream->opts, "srtp_out_params", ssrc64, 0);
+    avformat_alloc_output_context2(&srtpStream->format_context, NULL, "rtp", controllerUrl);
+    if (!srtpStream->format_context) {
+        printf("Could not create output context\n");
+        ret = AVERROR_UNKNOWN;
+        goto end;
+    }
+    stream_mapping_size = rtspStream->format_context->nb_streams;
+    stream_mapping = av_calloc(stream_mapping_size, sizeof(*stream_mapping));
+    if (!stream_mapping) {
+        ret = AVERROR(ENOMEM);
+        goto end;
+    }
+    AVCodec* ocodec = avcodec_find_encoder(rtspStream->strm->codecpar->codec_id);
+    srtpStream->codec_context = avcodec_alloc_context3(ocodec);
+    srtpStream->strm = avformat_new_stream(srtpStream->format_context, ocodec);
+    if (!srtpStream->strm) {
+        fprintf(stderr, "No output stream.\n");
+        goto end;
+    }
+    avcodec_parameters_copy(srtpStream->strm->codecpar, rtspStream->strm->codecpar);
+    avcodec_parameters_to_context(srtpStream->codec_context, srtpStream->strm->codecpar);
+    if (!(srtpStream->format_context->flags & AVFMT_NOFILE)) {
+        ret = avio_open(&srtpStream->format_context->pb, controllerUrl, AVIO_FLAG_WRITE);
         if (ret < 0) {
-            printf("Error occurred when opening output URL\n");
+            char err_buff[256];
+            av_strerror(ret, err_buff, sizeof(err_buff));
+            printf("Could not open output URL '%s'", err_buff);
             goto end;
-        } */
+        }
+    }
+
+    av_dump_format(srtpStream->format_context, 0, controllerUrl, 1);
+
+    ret = avformat_init_output(srtpStream->format_context, &srtpStream->opts);
+    if (ret < 0) {
+        printf("Error occurred when opening output URL\n");
+        goto end;
+    }
+    ret = avformat_write_header(srtpStream->format_context, &srtpStream->opts);
+    if (ret < 0) {
+        fprintf(stderr, "Error occurred when opening output file\n");
+        goto end;
+    }
+ 
+    while (1) {
+        ret = av_read_frame(rtspStream->format_context, pkt);
+        if (ret < 0)
+            break;
+ 
+        // in_stream  = ifmt_ctx->streams[pkt->stream_index];
+        if (pkt->stream_index >= stream_mapping_size ||
+            stream_mapping[pkt->stream_index] < 0) {
+            av_packet_unref(pkt);
+            continue;
+        }
+        pkt->stream_index = stream_mapping[pkt->stream_index];
+        // out_stream = ofmt_ctx->streams[pkt->stream_index];
+        // log_packet(rtspStream->format_context, pkt, "in");
+ 
+        /* copy packet */
+        av_packet_rescale_ts(pkt, rtspStream->strm->time_base, srtpStream->strm->time_base);
+        pkt->pos = -1;
+        // log_packet(ofmt_ctx, pkt, "out");
+ 
+        ret = av_interleaved_write_frame(srtpStream->format_context, pkt);
+        /* pkt is now blank (av_interleaved_write_frame() takes ownership of
+         * its contents and resets pkt), so that no unreferencing is necessary.
+         * This would be different if one used av_write_frame(). */
+        if (ret < 0) {
+            fprintf(stderr, "Error muxing packet\n");
+            break;
+        }
+    }
+ 
+    av_write_trailer(srtpStream->format_context);
 
 end:
     HAPLogDebug(&kHAPLog_Default, "Freeing memory and exiting.\n");
-    av_dict_free(&rtspOptions);
+    av_packet_free(&pkt);
+    // av_dict_free(&rtspOptions);
+    av_dict_free(&rtspStream->opts);
     avformat_close_input(&rtspStream->format_context);
-    avformat_free_context(rtspStream->format_context);
-    // avformat_close_input(&srtpStream->format_context);
+    // avformat_free_context(rtspStream->format_context);
+    // avformat_close_input(&rtspStream->format_context);
+    // TODO - Close stuff and fix the goto end stuff
     // av_dict_free(&srtpStream->opts);
     // if (srtpStream->format_context && !(srtpStream->format_context->flags & AVFMT_NOFILE))
     //     avio_close(srtpStream->format_context->pb);
