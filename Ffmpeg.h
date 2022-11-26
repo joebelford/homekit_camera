@@ -64,11 +64,10 @@ typedef struct {
     // const char *url;
 } srtp_context;
 
-void startInStream(void* context);
+void* startInStream(void* context);
 void startOutStream(void* context);
 void StreamContextInitialize(void* context);
 void StreamContextDeintialize(void* context);
-
 
 #if __has_feature(nullability)
 #pragma clang assume_nonnull end

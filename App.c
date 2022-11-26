@@ -85,7 +85,7 @@ static void LoadAccessoryState(void) {
         accessoryConfiguration.state.motion.detected = false;
         accessoryConfiguration.state.operatingMode.homekitActive = true;
         accessoryConfiguration.state.operatingMode.recordingActive = kHAPCharacteristicValue_Active_Active;
-        strcpy(accessoryConfiguration.ipAddress, "10.0.1.5"); // TODO - hardcode this for now
+        strcpy(accessoryConfiguration.ipAddress, "10.0.1.10"); // TODO - hardcode this for now
     }
 }
 /**

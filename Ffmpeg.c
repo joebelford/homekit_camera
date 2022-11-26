@@ -16,7 +16,7 @@
 #include "App_Camera.h"
 #include "App.h"
 #include "DB.h"
-#include "streaming.h"
+// #include "streaming.h"
 #include <arpa/inet.h>
 #include "util_base64.h"
 #include "HAPPlatformSystemCommand.h"
@@ -50,7 +50,7 @@ void StreamContextDeintialize(void* context) {
     avformat_close_input(&myContext->inStreamContext.format_context);
 }
 
-void startInStream(void* context) {
+void* startInStream(void* context) {
     // start rtsp stream
     rtsp_context* rtspStream = &((AccessoryContext*) context)->inStreamContext;
     int ret, stream_index = 0;
@@ -100,8 +100,7 @@ void startInStream(void* context) {
     rtspStream->width = rtspStream->codec_context->width;
     rtspStream->height = rtspStream->codec_context->height;
     rtspStream->pix_fmt = rtspStream->codec_context->pix_fmt;
-    fprintf(stderr, "Streaming...\n");
-    sleep(2);
+    pthread_exit(NULL);
 }
 
 void startOutStream(void* context HAP_UNUSED) {

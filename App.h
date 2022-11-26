@@ -18,7 +18,8 @@ extern "C" {
 #endif
 
 #include "HAP.h"
-#include "streaming.h"
+// #include "streaming.h"
+#include "App_Camera.h"
 #include "Ffmpeg.h"
 #include <pthread.h>
 
@@ -42,7 +43,7 @@ typedef struct {
             bool homekitActive;
             HAPCharacteristicValue_Active recordingActive;
         } operatingMode;
-    HAPCharacteristicValue_Active active;
+        HAPCharacteristicValue_Active active;
     } state;
     char ipAddress[9]; // TODO - hardcode for now
     HAPAccessoryServerRef* server;
