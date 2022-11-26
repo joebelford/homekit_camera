@@ -22,30 +22,103 @@
 #include "HAPPlatformSystemCommand.h"
 #include <libavutil/imgutils.h>
 
-void* xmalloc(size_t size) {
-    void* value = malloc(size);
-    if (value == 0)
-        exit(EXIT_FAILURE);
-    // fatal("virtual memory exhausted");
-    return value;
-}
-
-void* startStream(void* context HAP_UNUSED) {
+void StreamContextInitialize(void* context) {
     AccessoryContext* myContext = context;
-    streamingSession* mySession = &myContext->session;
-    HAPError err;
-    // TODO - Can't hardcode since it'll come from the controller.
+    // Get IP Address
     struct in_addr ia;
     inet_pton(AF_INET, "10.0.1.230", &(ia.s_addr));
-    mySession->controllerAddress.ipAddress = ia.s_addr;
-    //61673?rtcpport=61673&pkt_size=1316
-    mySession->controllerAddress.videoPort = 61673;
-    mySession->videoParameters.vRtpParameters.maxMTU = 1316;
-    // Get IP Address
+    myContext->session.controllerAddress.ipAddress = ia.s_addr;
+    // 61673?rtcpport=61673&pkt_size=1316
+    myContext->session.controllerAddress.videoPort = 61673;
+    myContext->session.videoParameters.vRtpParameters.maxMTU = 1316;
+    memset(&myContext->inStreamContext, 0, sizeof(rtsp_context));
+    myContext->inStreamContext.format_context = NULL;
+    myContext->inStreamContext.packet = av_packet_alloc();
+    myContext->inStreamContext.opts = NULL;
+    myContext->inStreamContext.url = "rtsp://admin:admin@10.0.1.252:554/ch01/0";
+    av_dict_set(&myContext->inStreamContext.opts, "rtsp_transport", "tcp", 0);
+    // av_dict_set(&myContext->inStreamContext.opts, "framerate", "30", 0);
+    myContext->outStreamContext.format_context = NULL;
+    myContext->outStreamContext.opts = NULL;
+}
+
+void StreamContextDeintialize(void* context) {
+    AccessoryContext* myContext = context;
+    HAPLogDebug(&kHAPLog_Default, "Freeing memory and exiting.\n");
+    av_packet_free(&myContext->inStreamContext.packet);
+    av_dict_free(&myContext->inStreamContext.opts);
+    avformat_close_input(&myContext->inStreamContext.format_context);
+}
+
+void startInStream(void* context) {
+    // start rtsp stream
+    rtsp_context* rtspStream = &((AccessoryContext*) context)->inStreamContext;
+    int ret, stream_index = 0;
+    if (avformat_open_input(&rtspStream->format_context, rtspStream->url, NULL, &rtspStream->opts) < 0) {
+        fprintf(stderr, "Failed to open input stream");
+    }
+    if (avformat_find_stream_info(rtspStream->format_context, NULL) < 0) {
+        fprintf(stderr, "Failed to retrieve input stream information");
+    }
+    av_dump_format(rtspStream->format_context, 0, rtspStream->url, 0);
+
+    ret = av_find_best_stream(rtspStream->format_context, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+    if (ret < 0) {
+        fprintf(stderr,
+                "Could not find %s stream in input file '%s'\n",
+                av_get_media_type_string(AVMEDIA_TYPE_VIDEO),
+                rtspStream->url);
+    } else {
+        stream_index = ret;
+        rtspStream->strm = rtspStream->format_context->streams[stream_index];
+
+        /* find decoder for the stream */
+        rtspStream->decoder = avcodec_find_decoder(rtspStream->strm->codecpar->codec_id);
+        if (!rtspStream->decoder) {
+            fprintf(stderr, "failed to find %s codec\n", av_get_media_type_string(AVMEDIA_TYPE_VIDEO));
+        }
+
+        /* Allocate a codec context for the decoder */
+        rtspStream->codec_context = avcodec_alloc_context3(rtspStream->decoder);
+        if (!rtspStream->codec_context) {
+            fprintf(stderr, "Failed to allocate the %s codec context\n", av_get_media_type_string(AVMEDIA_TYPE_VIDEO));
+        }
+
+        /* Copy codec parameters from input stream to codec context */
+        if ((ret = avcodec_parameters_to_context(rtspStream->codec_context, rtspStream->strm->codecpar)) < 0) {
+            fprintf(stderr,
+                    "Failed to copy %s codec parameters to decoder context\n",
+                    av_get_media_type_string(AVMEDIA_TYPE_VIDEO));
+        }
+
+        /* Init the decoders */
+        if ((ret = avcodec_open2(rtspStream->codec_context, rtspStream->decoder, &rtspStream->opts)) < 0) {
+            fprintf(stderr, "Failed to open %s codec\n", av_get_media_type_string(AVMEDIA_TYPE_VIDEO));
+        }
+        // *stream_idx = stream_index;
+    }
+    rtspStream->width = rtspStream->codec_context->width;
+    rtspStream->height = rtspStream->codec_context->height;
+    rtspStream->pix_fmt = rtspStream->codec_context->pix_fmt;
+    fprintf(stderr, "Streaming...\n");
+    sleep(2);
+}
+
+void startOutStream(void* context HAP_UNUSED) {
+    AccessoryContext* myContext = context;
+    streamingSession* mySession = &myContext->session;
+    rtsp_context* rtspStream = &myContext->inStreamContext;
+    AVPacket* pkt = myContext->inStreamContext.packet;
+    int ret;
+    // int stream_index = 0;
+    int* stream_mapping = NULL;
+    int stream_mapping_size = 0;
+    srtp_context* srtpStream = &myContext->outStreamContext;
+
+    HAPError err;
     char controllerAddress[INET_ADDRSTRLEN];
     HAPRawBufferZero(controllerAddress, INET_ADDRSTRLEN);
     (void) inet_ntop(AF_INET, &mySession->controllerAddress.ipAddress, controllerAddress, INET_ADDRSTRLEN);
-
     // Encode64 ssrc
     uint8_t ssrcBuffer[KEYLENGTH + SALTLENGTH];
     HAPRawBufferZero(ssrcBuffer, KEYLENGTH + SALTLENGTH);
@@ -96,90 +169,28 @@ void* startStream(void* context HAP_UNUSED) {
             mySession->controllerAddress.videoPort,
             mySession->videoParameters.vRtpParameters.maxMTU);
 
-    AVPacket *pkt = NULL;
-    pkt = av_packet_alloc();
+    // pkt = av_packet_alloc();
     if (!pkt) {
         fprintf(stderr, "Could not allocate AVPacket\n");
-        return NULL;
-    }
-    // start rtsp stream
-    rtsp_context* rtspStream = xmalloc(sizeof(rtsp_context));
-    rtspStream->format_context = NULL;
-    rtspStream->opts = NULL;
-    int ret;
-    int stream_index = 0;
-    int *stream_mapping = NULL;
-    int stream_mapping_size = 0;
-    rtspStream->url = "rtsp://admin:admin@10.0.1.252:554/ch01/0";
-    av_dict_set(&rtspStream->opts, "rtsp_transport", "tcp", 0);
-    // av_dict_set(&rtspStream->opts, "framerate", "30", 0);
-    if (avformat_open_input(&rtspStream->format_context, rtspStream->url, NULL, &rtspStream->opts) < 0) {
-        fprintf(stderr, "Failed to open input stream");
         goto end;
     }
-    if (avformat_find_stream_info(rtspStream->format_context, NULL) < 0) {
-        fprintf(stderr, "Failed to retrieve input stream information");
-        goto end;
-    }
-    av_dump_format(rtspStream->format_context, 0, rtspStream->url, 0);
-
-    ret = av_find_best_stream(rtspStream->format_context, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
-    if (ret < 0) {
-        fprintf(stderr,
-                "Could not find %s stream in input file '%s'\n",
-                av_get_media_type_string(AVMEDIA_TYPE_VIDEO),
-                rtspStream->url);
-        // return ret;
-        goto end;
-    } else {
-        stream_index = ret;
-        rtspStream->strm = rtspStream->format_context->streams[stream_index];
-
-        /* find decoder for the stream */
-        rtspStream->decoder = avcodec_find_decoder(rtspStream->strm->codecpar->codec_id);
-        if (!rtspStream->decoder) {
-            fprintf(stderr, "failed to find %s codec\n", av_get_media_type_string(AVMEDIA_TYPE_VIDEO));
-            goto end;
-        }
-
-        /* Allocate a codec context for the decoder */
-        rtspStream->codec_context = avcodec_alloc_context3(rtspStream->decoder);
-        if (!rtspStream->codec_context) {
-            fprintf(stderr, "Failed to allocate the %s codec context\n", av_get_media_type_string(AVMEDIA_TYPE_VIDEO));
-            goto end;
-        }
-
-        /* Copy codec parameters from input stream to codec context */
-        if ((ret = avcodec_parameters_to_context(rtspStream->codec_context, rtspStream->strm->codecpar)) < 0) {
-            fprintf(stderr,
-                    "Failed to copy %s codec parameters to decoder context\n",
-                    av_get_media_type_string(AVMEDIA_TYPE_VIDEO));
-            goto end;
-        }
-
-        /* Init the decoders */
-        if ((ret = avcodec_open2(rtspStream->codec_context, rtspStream->decoder, &rtspStream->opts)) < 0) {
-            fprintf(stderr, "Failed to open %s codec\n", av_get_media_type_string(AVMEDIA_TYPE_VIDEO));
-            goto end;
-        }
-        // *stream_idx = stream_index;
-    }
-    rtspStream->width = rtspStream->codec_context->width;
-    rtspStream->height = rtspStream->codec_context->height;
-    rtspStream->pix_fmt = rtspStream->codec_context->pix_fmt;
+    // startInStream(rtspStream);
+    // fprintf(stderr, "Started In Stream.\n");
     uint8_t* video_dst_data[4] = { NULL };
     int video_dst_linesize[4];
     int video_dst_bufsize;
     ret = av_image_alloc( // TODO - Make sure this is freed
-            video_dst_data, video_dst_linesize, rtspStream->width, rtspStream->height, rtspStream->pix_fmt, 1);
+            video_dst_data,
+            video_dst_linesize,
+            rtspStream->width,
+            rtspStream->height,
+            rtspStream->pix_fmt,
+            1);
     if (ret < 0) {
         fprintf(stderr, "Could not allocate raw video buffer\n");
         goto end;
     }
     video_dst_bufsize = ret;
-    srtp_context* srtpStream = xmalloc(sizeof(srtp_context));
-    srtpStream->opts = NULL;
-    srtpStream->format_context = NULL;
     av_dict_set(&srtpStream->opts, "srtp_out_suite", "AES_CM_128_HMAC_SHA1_80", 0);
     av_dict_set(&srtpStream->opts, "srtp_out_params", ssrc64, 0);
     avformat_alloc_output_context2(&srtpStream->format_context, NULL, "rtp", controllerUrl);
@@ -194,9 +205,9 @@ void* startStream(void* context HAP_UNUSED) {
         ret = AVERROR(ENOMEM);
         goto end;
     }
-    AVCodec* ocodec = avcodec_find_encoder(rtspStream->strm->codecpar->codec_id);
-    srtpStream->codec_context = avcodec_alloc_context3(ocodec);
-    srtpStream->strm = avformat_new_stream(srtpStream->format_context, ocodec);
+    srtpStream->encoder = avcodec_find_encoder(rtspStream->strm->codecpar->codec_id);
+    srtpStream->codec_context = avcodec_alloc_context3(srtpStream->encoder);
+    srtpStream->strm = avformat_new_stream(srtpStream->format_context, srtpStream->encoder);
     if (!srtpStream->strm) {
         fprintf(stderr, "No output stream.\n");
         goto end;
@@ -225,27 +236,26 @@ void* startStream(void* context HAP_UNUSED) {
         fprintf(stderr, "Error occurred when opening output file\n");
         goto end;
     }
- 
+
     while (1) {
         ret = av_read_frame(rtspStream->format_context, pkt);
         if (ret < 0)
             break;
- 
+
         // in_stream  = ifmt_ctx->streams[pkt->stream_index];
-        if (pkt->stream_index >= stream_mapping_size ||
-            stream_mapping[pkt->stream_index] < 0) {
+        if (pkt->stream_index >= stream_mapping_size || stream_mapping[pkt->stream_index] < 0) {
             av_packet_unref(pkt);
             continue;
         }
         pkt->stream_index = stream_mapping[pkt->stream_index];
         // out_stream = ofmt_ctx->streams[pkt->stream_index];
         // log_packet(rtspStream->format_context, pkt, "in");
- 
+
         /* copy packet */
         av_packet_rescale_ts(pkt, rtspStream->strm->time_base, srtpStream->strm->time_base);
         pkt->pos = -1;
         // log_packet(ofmt_ctx, pkt, "out");
- 
+
         ret = av_interleaved_write_frame(srtpStream->format_context, pkt);
         /* pkt is now blank (av_interleaved_write_frame() takes ownership of
          * its contents and resets pkt), so that no unreferencing is necessary.
@@ -255,22 +265,17 @@ void* startStream(void* context HAP_UNUSED) {
             break;
         }
     }
- 
+
     av_write_trailer(srtpStream->format_context);
 
 end:
     HAPLogDebug(&kHAPLog_Default, "Freeing memory and exiting.\n");
-    av_packet_free(&pkt);
-    // av_dict_free(&rtspOptions);
-    av_dict_free(&rtspStream->opts);
-    avformat_close_input(&rtspStream->format_context);
-    // avformat_free_context(rtspStream->format_context);
-    // avformat_close_input(&rtspStream->format_context);
     // TODO - Close stuff and fix the goto end stuff
-    // av_dict_free(&srtpStream->opts);
-    // if (srtpStream->format_context && !(srtpStream->format_context->flags & AVFMT_NOFILE))
-    //     avio_close(srtpStream->format_context->pb);
-    // avformat_free_context(srtpStream->format_context);
+    av_dict_free(&myContext->outStreamContext.opts);
+    // if (&myContext->outStreamContext.format_context && !(myContext->outStreamContext.format_context->flags &
+    // AVFMT_NOFILE))
+    avio_close(myContext->outStreamContext.format_context->pb);
+    avformat_free_context(myContext->outStreamContext.format_context);
 
     pthread_exit(NULL);
     /*

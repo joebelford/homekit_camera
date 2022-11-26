@@ -19,6 +19,7 @@ extern "C" {
 
 #include "HAP.h"
 #include "streaming.h"
+#include "Ffmpeg.h"
 #include <pthread.h>
 
 #if __has_feature(nullability)
@@ -53,6 +54,8 @@ static AccessoryConfiguration accessoryConfiguration;
 typedef struct {
     streamingSession session;
     pthread_t streamingThread;
+    rtsp_context inStreamContext;
+    srtp_context outStreamContext;
 } AccessoryContext;
 
 /**

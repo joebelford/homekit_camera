@@ -43,7 +43,10 @@ int main() {
     // checkSsrc();
 
     static AccessoryContext context;
-    startStream(&context);
+    StreamContextInitialize(&context);
+    startInStream(&context);
+    // startOutStream(&context);
+    StreamContextDeintialize(&context);
     /*     HAPError err;
         HAPAccessoryServerRef server;
         const HAPTLV8CharacteristicWriteRequest request;
