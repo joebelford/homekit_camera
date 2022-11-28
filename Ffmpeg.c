@@ -103,7 +103,7 @@ void* startInStream(void* context) {
     pthread_exit(NULL);
 }
 
-void startOutStream(void* context HAP_UNUSED) {
+void* startOutStream(void* context HAP_UNUSED) {
     AccessoryContext* myContext = context;
     streamingSession* mySession = &myContext->session;
     rtsp_context* rtspStream = &myContext->inStreamContext;

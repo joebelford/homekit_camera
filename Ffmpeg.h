@@ -41,7 +41,7 @@ typedef struct {
 typedef struct {
     AVFormatContext* format_context;
     AVCodecContext* codec_context;
-    AVCodec* decoder;
+    const AVCodec* decoder;
     AVStream* strm;
     AVPacket* packet;
     AVDictionary* opts;
@@ -54,7 +54,7 @@ typedef struct {
 typedef struct {
     AVFormatContext* format_context;
     AVCodecContext* codec_context;
-    AVCodec* encoder;
+    const AVCodec* encoder;
     AVStream* strm;
     AVPacket* packet;
     AVDictionary* opts;
@@ -65,7 +65,7 @@ typedef struct {
 } srtp_context;
 
 void* startInStream(void* context);
-void startOutStream(void* context);
+void* startOutStream(void* context);
 void StreamContextInitialize(void* context);
 void StreamContextDeintialize(void* context);
 
