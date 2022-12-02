@@ -232,7 +232,9 @@ typedef struct {
 } audioRtpParameters;
 
 typedef struct {
-    videoCodecConfigStruct codecConfig;
+    // Selected video codec type?
+    videoCodecConfigStruct codecConfig;  //codec parameters?
+    // Selected video attributes?
     videoRtpParameters vRtpParameters;
 } selectedVideoParameters;
 
@@ -257,6 +259,7 @@ typedef struct {
 
 typedef struct {
     uint8_t sessionId[UUIDLENGTH];
+    uint32_t setupWriteStatus;
     HAPCharacteristicValue_StreamingStatus status;
     controllerAddressStruct controllerAddress;
     srtpParameters videoParams;
@@ -279,9 +282,9 @@ typedef struct {
     selectedAudioParameters audioParameters;
 } selectedRTPStruct;
 
-HAPError handleSessionRead(HAPTLVWriterRef* responseWriter, streamingSession* session);
+// HAPError handleSessionRead(HAPTLVWriterRef* responseWriter, streamingSession* session);
 
-HAPError handleSessionWrite(HAPTLVReaderRef* responseReader, streamingSession* session);
+// HAPError handleSessionWrite(HAPTLVReaderRef* responseReader, streamingSession* session);
 
 HAPError handleSelectedWrite(HAPTLVReaderRef* responseReader, selectedRTPStruct* selectedRTP);
 

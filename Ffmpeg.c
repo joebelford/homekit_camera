@@ -23,6 +23,7 @@
 #include <libavutil/imgutils.h>
 
 void StreamContextInitialize(void* context) {
+    HAPLogDebug(&kHAPLog_Default, "Initializing streaming context.\n");
     AccessoryContext* myContext = context;
     // Get IP Address
     struct in_addr ia;
@@ -51,6 +52,7 @@ void StreamContextDeintialize(void* context) {
 }
 
 void* startInStream(void* context) {
+    HAPLogInfo(&kHAPLog_Default, "Starting input stream.\n");
     // start rtsp stream
     rtsp_context* rtspStream = &((AccessoryContext*) context)->inStreamContext;
     int ret, stream_index = 0;
@@ -100,6 +102,37 @@ void* startInStream(void* context) {
     rtspStream->width = rtspStream->codec_context->width;
     rtspStream->height = rtspStream->codec_context->height;
     rtspStream->pix_fmt = rtspStream->codec_context->pix_fmt;
+    while (1) {
+        ret = av_read_frame(rtspStream->format_context, rtspStream->packet);
+        if (ret < 0)
+            break;
+        // TODO - write these to buffer for record, and streaming actions.
+        av_packet_unref(rtspStream->packet);
+        // in_stream  = ifmt_ctx->streams[pkt->stream_index];
+        // if (rtspStream->packet->stream_index >= rtspStream->format_context->nb_streams ||
+        // stream_mapping[pkt->stream_index] < 0) {
+        //     av_packet_unref(pkt);
+        //     continue;
+        // }
+        // pkt->stream_index = stream_mapping[pkt->stream_index];
+        // out_stream = ofmt_ctx->streams[pkt->stream_index];
+        // log_packet(rtspStream->format_context, pkt, "in");
+
+        /* copy packet */
+        // av_packet_rescale_ts(pkt, rtspStream->strm->time_base, srtpStream->strm->time_base);
+        // pkt->pos = -1;
+        // log_packet(ofmt_ctx, pkt, "out");
+
+        // ret = av_interleaved_write_frame(srtpStream->format_context, pkt);
+        /* pkt is now blank (av_interleaved_write_frame() takes ownership of
+         * its contents and resets pkt), so that no unreferencing is necessary.
+         * This would be different if one used av_write_frame(). */
+        // if (ret < 0) {
+        //     fprintf(stderr, "Error muxing packet\n");
+        //     break;
+        // }
+    }
+
     pthread_exit(NULL);
 }
 

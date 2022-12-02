@@ -27,6 +27,7 @@
 
 #include "HAP.h"
 #include "HAPTLV+Internal.h"
+#include "Ffmpeg.h"
 
 #include <string.h>
 #include "App.h"
@@ -211,6 +212,20 @@ void ContextInitialize(AccessoryContext* context) {
     memset(context, 0, sizeof(AccessoryContext));
     memset(context->session.sessionId, 0, UUIDLENGTH);
     context->session.status = kHAPCharacteristicValue_StreamingStatus_Available;
+        const char ipAddress[] = "10.0.1.10";
+    in_addr_t ia;
+    int s;
+    s = inet_pton(AF_INET, ipAddress, &ia);
+    if (s <= 0) {
+        HAPLogError(&kHAPLog_Default, "%s\n", "Invalid address");
+        // return kHAPError_InvalidData;
+    };
+    context->session.accessoryAddress.ipAddress = ia;
+    context->session.accessoryAddress.ipAddrVersion = 0;
+    context->session.ssrcVideo = 1;
+    context->session.ssrcAudio = 1;
+
+    StreamContextInitialize(context);
     //    context->session->ip_address = Set this up later.
 }
 
@@ -218,7 +233,7 @@ void ContextDeintialize(AccessoryContext* context) {
     if (context->streamingThread) {
         pthread_cancel(context->streamingThread);
     }
-
+    StreamContextDeintialize(context);
     free(context);
 }
 

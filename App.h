@@ -54,7 +54,8 @@ static AccessoryConfiguration accessoryConfiguration;
 
 typedef struct {
     streamingSession session;
-    pthread_t streamingThread;
+    pthread_t streamingThread; // TODO - This probably needs to be an array for multiple streams.
+    pthread_t inStreamThread;
     rtsp_context inStreamContext;
     srtp_context outStreamContext;
 } AccessoryContext;

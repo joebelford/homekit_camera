@@ -6,6 +6,7 @@
 
 #include "App.h"
 #include "DB.h"
+#include "Ffmpeg.h"
 
 #include "HAP.h"
 #include "HAPPlatform+Init.h"
@@ -225,7 +226,7 @@ static void InitializeIP() {
     // Prepare accessory server storage.
     static HAPIPSession ipSessions[kHAPIPSessionStorage_DefaultNumElements];
     static uint8_t ipInboundBuffers[HAPArrayCount(ipSessions)][kHAPIPSession_DefaultInboundBufferSize];
-    static uint8_t ipOutboundBuffers[HAPArrayCount(ipSessions)][kHAPIPSession_DefaultOutboundBufferSize];
+    static uint8_t ipOutboundBuffers[HAPArrayCount(ipSessions)][kHAPIPSession_DefaultOutboundBufferSize * 2];
     static HAPIPEventNotificationRef ipEventNotifications[HAPArrayCount(ipSessions)][kAttributeCount];
     for (size_t i = 0; i < HAPArrayCount(ipSessions); i++) {
         ipSessions[i].inboundBuffer.bytes = ipInboundBuffers[i];
@@ -299,6 +300,10 @@ int main(int argc HAP_UNUSED, char* _Nullable argv[_Nullable] HAP_UNUSED) {
     // and configure any additional unique platform dependencies
     AppInitialize(&platform.hapAccessoryServerOptions, &platform.hapPlatform, &platform.hapAccessoryServerCallbacks);
     ContextInitialize(&context);
+
+    if (pthread_create(&context.inStreamThread, NULL, startInStream, &context)) {
+        HAPLogInfo(&kHAPLog_Default, "Failed to start input stream thread.\n");
+    }
 
     // Initialize accessory server.
     HAPAccessoryServerCreate(
